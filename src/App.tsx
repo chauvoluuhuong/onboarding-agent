@@ -113,7 +113,7 @@ function ClampedBlock({
     variant === "user"
       ? "text-indigo-100 hover:bg-indigo-500/35 hover:text-white"
       : variant === "system"
-        ? "text-neutral-600 hover:bg-neutral-300/50 text-[10px] h-6 px-2"
+        ? "text-neutral-700 hover:bg-neutral-300/50 text-xs"
         : variant === "catalog"
           ? "text-emerald-700 hover:bg-emerald-50"
           : "text-indigo-600 hover:bg-indigo-50";
@@ -141,16 +141,18 @@ function ClampedBlock({
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="default"
           className={cn(
-            "mt-1 -ml-1 h-7 px-2 text-xs font-medium",
+            "mt-2 min-h-11 min-w-11 px-4 text-sm font-semibold rounded-lg",
+            !expanded &&
+              "text-[1.35rem] leading-none tracking-[0.15em] py-2.5",
             toggleBtnClass,
           )}
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-label={expanded ? "Show less" : "Show full message"}
         >
-          {expanded ? "Show less" : "…"}
+          {expanded ? "Show less" : "···"}
         </Button>
       )}
     </div>
