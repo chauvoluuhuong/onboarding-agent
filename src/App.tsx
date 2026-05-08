@@ -263,9 +263,9 @@ export default function App() {
 
   return (
     <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
-      <div className="flex-1 w-full max-w-4xl mx-auto flex flex-col p-2 md:p-4 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* Chat Interface */}
-        <Card className="flex-1 flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm min-h-0">
+        <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm min-h-0">
           <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-neutral-50/50 rounded-xl min-h-0">
             <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
               <div className="p-4 space-y-6 max-w-3xl mx-auto w-full pb-8">
