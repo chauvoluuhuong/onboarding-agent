@@ -1,4 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Send,
@@ -12,13 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ai,
@@ -27,6 +29,7 @@ import {
   scrapeWebsiteTool,
 } from "./services/geminiChatService";
 import openTillLogo from "./assets/opentill-logo.png";
+import { cn } from "@/lib/utils";
 
 type Product = {
   name: string;
@@ -55,6 +58,128 @@ type Message = {
 
 // Represents history for the SDK
 type Content = any;
+
+type ClampVariant = "user" | "assistant" | "system" | "catalog";
+
+function ClampedBlock({
+  resetKey,
+  measureKey,
+  variant,
+  children,
+}: {
+  resetKey: string;
+  measureKey: string;
+  variant: ClampVariant;
+  children: ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [isTruncatable, setIsTruncatable] = useState(false);
+  const outerRef = useRef<HTMLDivElement>(null);
+
+  const measure = useCallback(() => {
+    const el = outerRef.current;
+    if (!el) return;
+    if (expanded) return;
+    const overflows = el.scrollHeight > el.clientHeight + 1;
+    setIsTruncatable(overflows);
+  }, [expanded]);
+
+  useLayoutEffect(() => {
+    setIsTruncatable(false);
+    setExpanded(false);
+  }, [resetKey]);
+
+  useLayoutEffect(() => {
+    measure();
+    const el = outerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure, measureKey, expanded]);
+
+  const gradientFrom =
+    variant === "user"
+      ? "from-indigo-600"
+      : variant === "system"
+        ? "from-neutral-200"
+        : "from-white";
+
+  const toggleBtnClass =
+    variant === "user"
+      ? "text-indigo-100 hover:bg-indigo-500/35 hover:text-white"
+      : variant === "system"
+        ? "text-neutral-600 hover:bg-neutral-300/50 text-[10px] h-6 px-2"
+        : variant === "catalog"
+          ? "text-emerald-700 hover:bg-emerald-50"
+          : "text-indigo-600 hover:bg-indigo-50";
+
+  const showToggle = isTruncatable || expanded;
+
+  return (
+    <div className="w-full">
+      <div
+        ref={outerRef}
+        className={cn("relative", !expanded && "max-h-[40vh] overflow-hidden")}
+      >
+        {children}
+        {!expanded && isTruncatable && (
+          <div
+            className={cn(
+              "pointer-events-none absolute bottom-0 left-0 right-0 h-14 bg-linear-to-t to-transparent",
+              gradientFrom,
+            )}
+            aria-hidden
+          />
+        )}
+      </div>
+      {showToggle && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "mt-1 -ml-1 h-7 px-2 text-xs font-medium",
+            toggleBtnClass,
+          )}
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={expanded ? "Show less" : "Show full message"}
+        >
+          {expanded ? "Show less" : "…"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ClampedMarkdownMessage({
+  messageId,
+  text,
+  variant,
+  proseClassName,
+}: {
+  messageId: string;
+  text: string;
+  variant: Exclude<ClampVariant, "catalog">;
+  proseClassName: string;
+}) {
+  return (
+    <ClampedBlock
+      resetKey={`${messageId}\0${text}`}
+      measureKey={text}
+      variant={variant}
+    >
+      <div className={proseClassName}>
+        <ReactMarkdown>{text}</ReactMarkdown>
+      </div>
+    </ClampedBlock>
+  );
+}
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([
@@ -261,6 +386,17 @@ export default function App() {
 
   const hasData = businessDesc || products.length > 0 || isStopped;
 
+  const catalogMeasureKey = useMemo(
+    () =>
+      `${businessDesc}\n${products
+        .map(
+          (p) =>
+            `${p.name ?? ""}\0${p.suggested_description || p.description || ""}\0${p.sell_price ?? ""}\0${p.cost_price ?? ""}`,
+        )
+        .join("\n")}`,
+    [businessDesc, products],
+  );
+
   return (
     <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
       <div className="flex-1 flex flex-col min-h-0">
@@ -303,183 +439,188 @@ export default function App() {
                     return (
                       <div
                         key={msg.id}
-                        className="animate-in fade-in slide-in-from-bottom-4 duration-700 w-full mb-6"
+                        className="flex justify-start animate-in fade-in slide-in-from-bottom-2 w-full mb-6"
                       >
-                        <Card className="shadow-lg border-emerald-200 bg-white overflow-hidden">
-                          <CardHeader className="py-4 bg-emerald-50/50 border-b border-emerald-100">
-                            <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-4">
-                              <div>
-                                <CardTitle className="text-lg text-emerald-800 flex items-center gap-2">
-                                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                  Hi! Here are some my noted
-                                </CardTitle>
-                                <p className="text-emerald-700/80 text-xs mt-0.5">
-                                  Feel free to edit or add more details.
-                                </p>
-                              </div>
+                        <div className="max-w-[85%] w-full p-4 rounded-2xl bg-white border border-neutral-200 text-neutral-800 rounded-bl-sm shadow-sm">
+                          <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 pb-3 mb-1 border-b border-neutral-100">
+                            <div>
+                              <h3 className="text-base font-semibold text-emerald-800 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+                                Hi! Here are some my noted
+                              </h3>
+                              <p className="text-emerald-700/80 text-xs mt-0.5">
+                                Feel free to edit or add more details.
+                              </p>
+                            </div>
+                            {products.length > 0 && (
+                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-medium px-4 shadow-sm transition-all transform active:scale-95 shrink-0">
+                                Confirm
+                              </Button>
+                            )}
+                          </div>
+                          <ClampedBlock
+                            resetKey={msg.id}
+                            measureKey={catalogMeasureKey}
+                            variant="catalog"
+                          >
+                            <div className="space-y-6 pt-2">
+                              {(businessDesc || products.length > 0) && (
+                                <div>
+                                  <h4 className="text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
+                                    <span>👋</span> Your business:
+                                  </h4>
+                                  <Textarea
+                                    value={businessDesc}
+                                    onChange={(e) =>
+                                      setBusinessDesc(e.target.value)
+                                    }
+                                    className="w-full min-h-[80px] bg-white border-neutral-200 text-sm shadow-sm focus-visible:ring-emerald-500 rounded-md p-3"
+                                    placeholder="Describe your business here..."
+                                  />
+                                </div>
+                              )}
+
                               {products.length > 0 && (
-                                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-medium px-4 shadow-sm transition-all transform active:scale-95">
-                                  Confirm
-                                </Button>
+                                <div className="space-y-3">
+                                  <h4 className="text-sm font-semibold text-neutral-800">
+                                    Product List:
+                                  </h4>
+                                  <div className="border border-neutral-200 rounded-md overflow-x-auto bg-white shadow-sm hover:border-emerald-200 transition-colors">
+                                    <table className="w-full text-xs text-left">
+                                      <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600">
+                                        <tr>
+                                          <th className="px-3 py-2 font-semibold w-[30px]"></th>
+                                          <th className="px-3 py-2 font-semibold w-[50px]">
+                                            Img
+                                          </th>
+                                          <th className="px-3 py-2 font-semibold min-w-[150px]">
+                                            Name
+                                          </th>
+                                          <th className="px-3 py-2 font-semibold min-w-[200px]">
+                                            Description
+                                          </th>
+                                          <th className="px-3 py-2 font-semibold w-[80px]">
+                                            Cost
+                                          </th>
+                                          <th className="px-3 py-2 font-semibold w-[80px]">
+                                            Sell
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-neutral-100">
+                                        {products.map((product, i) => (
+                                          <tr
+                                            key={i}
+                                            className="hover:bg-neutral-50/50 transition-colors"
+                                          >
+                                            <td className="px-3 py-2 align-top">
+                                              <Checkbox
+                                                id={`product-${i}`}
+                                                className="h-4 w-4 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 mt-1"
+                                                defaultChecked
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2 align-top">
+                                              {product.image_url &&
+                                              product.image_url.startsWith(
+                                                "http",
+                                              ) ? (
+                                                <img
+                                                  src={product.image_url}
+                                                  alt={product.name}
+                                                  className="w-10 h-10 min-w-[2.5rem] object-cover rounded border border-neutral-200 bg-white"
+                                                  onError={(e) => {
+                                                    e.currentTarget.style.display =
+                                                      "none";
+                                                    e.currentTarget.parentElement!.innerHTML =
+                                                      '<div class="w-10 h-10 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center text-neutral-400 text-[8px]">No img</div>';
+                                                  }}
+                                                />
+                                              ) : (
+                                                <div className="w-10 h-10 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center text-neutral-400 text-[8px]">
+                                                  No img
+                                                </div>
+                                              )}
+                                            </td>
+                                            <td className="px-3 py-2 align-top">
+                                              <Input
+                                                value={product.name || ""}
+                                                onChange={(e) =>
+                                                  updateProduct(
+                                                    i,
+                                                    "name",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                className="h-8 text-xs bg-white shadow-sm focus-visible:ring-emerald-500"
+                                                placeholder="Name"
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2 align-top">
+                                              <Textarea
+                                                value={
+                                                  product.suggested_description ||
+                                                  product.description ||
+                                                  ""
+                                                }
+                                                onChange={(e) =>
+                                                  updateProduct(
+                                                    i,
+                                                    "suggested_description",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                className="min-h-[60px] text-xs resize-y bg-white shadow-sm focus-visible:ring-emerald-500"
+                                                placeholder="Description"
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2 align-top">
+                                              <Input
+                                                value={
+                                                  !product.cost_price ||
+                                                  product.cost_price ===
+                                                    "null" ||
+                                                  product.cost_price === "0"
+                                                    ? ""
+                                                    : product.cost_price
+                                                }
+                                                onChange={(e) =>
+                                                  updateProduct(
+                                                    i,
+                                                    "cost_price",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                className="h-8 text-xs bg-white shadow-sm focus-visible:ring-emerald-500"
+                                                placeholder="-"
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2 align-top">
+                                              <Input
+                                                value={
+                                                  product.sell_price || ""
+                                                }
+                                                onChange={(e) =>
+                                                  updateProduct(
+                                                    i,
+                                                    "sell_price",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                className="h-8 text-xs bg-white font-medium shadow-sm focus-visible:ring-emerald-500"
+                                                placeholder="-"
+                                              />
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
                               )}
                             </div>
-                          </CardHeader>
-                          <CardContent className="p-4 space-y-6">
-                            {/* Business Profile Section */}
-                            {(businessDesc || products.length > 0) && (
-                              <div>
-                                <h3 className="text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
-                                  <span>👋</span> Your business:
-                                </h3>
-                                <Textarea
-                                  value={businessDesc}
-                                  onChange={(e) =>
-                                    setBusinessDesc(e.target.value)
-                                  }
-                                  className="w-full min-h-[80px] bg-white border-neutral-200 text-sm shadow-sm focus-visible:ring-emerald-500 rounded-md p-3"
-                                  placeholder="Describe your business here..."
-                                />
-                              </div>
-                            )}
-
-                            {/* Products Table */}
-                            {products.length > 0 && (
-                              <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-neutral-800">
-                                  Product List:
-                                </h3>
-                                <div className="border border-neutral-200 rounded-md overflow-x-auto bg-white shadow-sm hover:border-emerald-200 transition-colors">
-                                  <table className="w-full text-xs text-left">
-                                    <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600">
-                                      <tr>
-                                        <th className="px-3 py-2 font-semibold w-[30px]"></th>
-                                        <th className="px-3 py-2 font-semibold w-[50px]">
-                                          Img
-                                        </th>
-                                        <th className="px-3 py-2 font-semibold min-w-[150px]">
-                                          Name
-                                        </th>
-                                        <th className="px-3 py-2 font-semibold min-w-[200px]">
-                                          Description
-                                        </th>
-                                        <th className="px-3 py-2 font-semibold w-[80px]">
-                                          Cost
-                                        </th>
-                                        <th className="px-3 py-2 font-semibold w-[80px]">
-                                          Sell
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-neutral-100">
-                                      {products.map((product, i) => (
-                                        <tr
-                                          key={i}
-                                          className="hover:bg-neutral-50/50 transition-colors"
-                                        >
-                                          <td className="px-3 py-2 align-top">
-                                            <Checkbox
-                                              id={`product-${i}`}
-                                              className="h-4 w-4 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 mt-1"
-                                              defaultChecked
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2 align-top">
-                                            {product.image_url &&
-                                            product.image_url.startsWith(
-                                              "http",
-                                            ) ? (
-                                              <img
-                                                src={product.image_url}
-                                                alt={product.name}
-                                                className="w-10 h-10 min-w-[2.5rem] object-cover rounded border border-neutral-200 bg-white"
-                                                onError={(e) => {
-                                                  e.currentTarget.style.display =
-                                                    "none";
-                                                  e.currentTarget.parentElement!.innerHTML =
-                                                    '<div class="w-10 h-10 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center text-neutral-400 text-[8px]">No img</div>';
-                                                }}
-                                              />
-                                            ) : (
-                                              <div className="w-10 h-10 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center text-neutral-400 text-[8px]">
-                                                No img
-                                              </div>
-                                            )}
-                                          </td>
-                                          <td className="px-3 py-2 align-top">
-                                            <Input
-                                              value={product.name || ""}
-                                              onChange={(e) =>
-                                                updateProduct(
-                                                  i,
-                                                  "name",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              className="h-8 text-xs bg-white shadow-sm focus-visible:ring-emerald-500"
-                                              placeholder="Name"
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2 align-top">
-                                            <Textarea
-                                              value={
-                                                product.suggested_description ||
-                                                product.description ||
-                                                ""
-                                              }
-                                              onChange={(e) =>
-                                                updateProduct(
-                                                  i,
-                                                  "suggested_description",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              className="min-h-[60px] text-xs resize-y bg-white shadow-sm focus-visible:ring-emerald-500"
-                                              placeholder="Description"
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2 align-top">
-                                            <Input
-                                              value={
-                                                !product.cost_price ||
-                                                product.cost_price === "null" ||
-                                                product.cost_price === "0"
-                                                  ? ""
-                                                  : product.cost_price
-                                              }
-                                              onChange={(e) =>
-                                                updateProduct(
-                                                  i,
-                                                  "cost_price",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              className="h-8 text-xs bg-white shadow-sm focus-visible:ring-emerald-500"
-                                              placeholder="-"
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2 align-top">
-                                            <Input
-                                              value={product.sell_price || ""}
-                                              onChange={(e) =>
-                                                updateProduct(
-                                                  i,
-                                                  "sell_price",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              className="h-8 text-xs bg-white font-medium shadow-sm focus-visible:ring-emerald-500"
-                                              placeholder="-"
-                                            />
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
+                          </ClampedBlock>
+                        </div>
                       </div>
                     );
                   }
@@ -498,9 +639,24 @@ export default function App() {
                               : "bg-white border border-neutral-200 text-neutral-800 rounded-bl-sm shadow-sm"
                         }`}
                       >
-                        <div className="text-sm md:text-base prose prose-neutral max-w-none">
-                          <ReactMarkdown>{msg.text}</ReactMarkdown>
-                        </div>
+                        <ClampedMarkdownMessage
+                          messageId={msg.id}
+                          text={msg.text}
+                          variant={
+                            msg.role === "user"
+                              ? "user"
+                              : msg.role === "system"
+                                ? "system"
+                                : "assistant"
+                          }
+                          proseClassName={
+                            msg.role === "user"
+                              ? "prose prose-sm md:prose-base prose-invert max-w-none"
+                              : msg.role === "system"
+                                ? "prose prose-neutral max-w-none text-[10px] leading-snug"
+                                : "prose prose-neutral max-w-none text-sm md:text-base"
+                          }
+                        />
                       </div>
                     </div>
                   );
