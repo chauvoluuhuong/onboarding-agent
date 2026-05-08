@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Send,
-  Store,
   PackageSearch,
   CheckCircle2,
   ChevronRight,
@@ -27,6 +26,7 @@ import {
   responseSchema,
   scrapeWebsiteTool,
 } from "./services/geminiChatService";
+import openTillLogo from "./assets/opentill-logo.png";
 
 type Product = {
   name: string;
@@ -276,11 +276,13 @@ export default function App() {
                         key={msg.id}
                         className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in fade-in zoom-in duration-500"
                       >
-                        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-md">
-                          <Store className="w-10 h-10" />
-                        </div>
+                        <img
+                          src={openTillLogo}
+                          alt="OpenTill"
+                          className="w-44 max-w-[85vw] h-auto mb-6 object-contain drop-shadow-md"
+                        />
                         <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4 tracking-tight">
-                          Hi there, let us understand you!
+                          Hi there, let us listen to you!
                         </h2>
                         <p className="text-neutral-600 text-xl max-w-md leading-relaxed">
                           {msg.text}
