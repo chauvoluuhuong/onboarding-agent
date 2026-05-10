@@ -8,12 +8,22 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, CheckCircle2, Loader2, Globe, X } from "lucide-react";
+import {
+  Send,
+  CheckCircle2,
+  Loader2,
+  Globe,
+  X,
+  Search,
+  Sparkles,
+  Package,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CatalogContent } from "./CatalogContent";
+import { CatalogContentV2 } from "./CatalogContent_v2";
+import type { Product } from "./CatalogContent_v2";
 import {
   ai,
   systemInstruction,
@@ -22,8 +32,6 @@ import {
 } from "./services/geminiChatService";
 import openTillLogo from "./assets/opentill-logo.png";
 import { cn } from "@/lib/utils";
-
-type Product = import("./CatalogContent").Product;
 
 type AgentResponse = {
   conversation: string;
@@ -43,7 +51,18 @@ type Content = any;
 
 type ClampVariant = "user" | "assistant" | "system" | "catalog";
 
-type OnboardingStep = "ask-website" | "enter-url" | "chat";
+type OnboardingStep =
+  | "ask-website"
+  | "enter-url"
+  | "processing"
+  | "results"
+  | "chat";
+
+const PROGRESS_STEPS = [
+  { icon: Search, label: "Scraping your website...", delay: 0 },
+  { icon: Sparkles, label: "Analyzing your products...", delay: 3000 },
+  { icon: Package, label: "Building your catalog...", delay: 6000 },
+];
 
 function ClampedBlock({
   resetKey,
@@ -128,7 +147,8 @@ function ClampedBlock({
           size="default"
           className={cn(
             "mt-2 min-h-11 min-w-11 px-4 text-sm font-semibold rounded-lg",
-            !expanded && "text-[1.35rem] leading-none tracking-[0.15em] py-2.5",
+            !expanded &&
+              "text-[1.35rem] leading-none tracking-[0.15em] py-2.5",
             toggleBtnClass,
           )}
           onClick={() => setExpanded((v) => !v)}
@@ -166,6 +186,110 @@ function ClampedMarkdownMessage({
   );
 }
 
+function ProcessingView({ url }: { url: string }) {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    const timers = PROGRESS_STEPS.map((step, i) =>
+      setTimeout(() => setCurrentStep(i), step.delay),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
+      <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm">
+        <CardContent className="flex-1 p-0 flex flex-col items-center justify-center bg-neutral-50/50 rounded-xl">
+          <div className="flex flex-col items-center justify-center text-center px-4 max-w-md mx-auto">
+            <div className="relative mb-8">
+              <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center animate-pulse">
+                {(() => {
+                  const StepIcon = PROGRESS_STEPS[currentStep]?.icon ?? Search;
+                  return (
+                    <StepIcon className="w-9 h-9 text-indigo-600" />
+                  );
+                })()}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
+              </div>
+            </div>
+
+            <h2 className="text-xl font-semibold text-neutral-900 mb-2 tracking-tight">
+              {PROGRESS_STEPS[currentStep]?.label ?? "Processing..."}
+            </h2>
+
+            <p className="text-neutral-400 text-sm mb-8 break-all">
+              {url}
+            </p>
+
+            <div className="flex gap-2">
+              {PROGRESS_STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-700",
+                    i <= currentStep
+                      ? "bg-indigo-500 w-8"
+                      : "bg-neutral-200 w-4",
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ResultsView({
+  products,
+  businessDesc,
+  onConfirm,
+}: {
+  products: Product[];
+  businessDesc: string;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
+        <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm min-h-0">
+          <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-neutral-50/50 rounded-xl min-h-0">
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="p-6 max-w-3xl mx-auto w-full pb-8">
+                <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      Here's what we found!
+                    </h3>
+                    <p className="text-emerald-700/70 text-xs mt-0.5">
+                      We analyzed your website and found the following
+                    </p>
+                  </div>
+                  <Button
+                    onClick={onConfirm}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 text-sm font-medium px-6 shadow-sm shrink-0"
+                  >
+                    Confirm
+                  </Button>
+                </div>
+
+                <CatalogContentV2
+                  products={products}
+                  businessDesc={businessDesc}
+                />
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 export default function AppV2() {
   const [step, setStep] = useState<OnboardingStep>("ask-website");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -176,6 +300,7 @@ export default function AppV2() {
   const [products, setProducts] = useState<Product[]>([]);
   const [businessDesc, setBusinessDesc] = useState<string>("");
   const [isStopped, setIsStopped] = useState(false);
+  const [lastConversation, setLastConversation] = useState<string>("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -200,14 +325,6 @@ export default function AppV2() {
   }, [messages, isLoading, products, businessDesc, step]);
 
   const scrapeWebsite = async (url: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        role: "system",
-        text: `Scraping website: ${url}...`,
-      },
-    ]);
     try {
       const res = await fetch("/api/scrape", {
         method: "POST",
@@ -234,59 +351,19 @@ export default function AppV2() {
 
   const handleWebsiteSubmit = async () => {
     if (!websiteUrl.trim()) return;
-    setStep("chat");
+    setStep("processing");
 
     const userMsg = `My website is: ${websiteUrl}`;
-    setMessages([{ id: Date.now().toString(), role: "user", text: userMsg }]);
     setIsLoading(true);
 
     try {
       const newUserContent = { role: "user", parts: [{ text: userMsg }] };
       const currentHistory = [newUserContent];
-      let finalHistory = await processAgentTurn(currentHistory);
+      const finalHistory = await processAgentTurn(currentHistory);
       setHistory(finalHistory);
     } catch (err: any) {
       console.error(err);
-      setMessages((p) => [
-        ...p,
-        {
-          id: Date.now().toString(),
-          role: "system",
-          text: "An error occurred communicating with the AI.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const executeTurn = async (userText: string) => {
-    if (!userText.trim()) return;
-    if (isStopped) setIsStopped(false);
-
-    const newMessages = [
-      ...messages,
-      { id: Date.now().toString(), role: "user" as const, text: userText },
-    ];
-    setMessages(newMessages);
-    setInputText("");
-    setIsLoading(true);
-
-    try {
-      const newUserContent = { role: "user", parts: [{ text: userText }] };
-      const currentHistory = [...history, newUserContent];
-      let finalHistory = await processAgentTurn(currentHistory);
-      setHistory(finalHistory);
-    } catch (err: any) {
-      console.error(err);
-      setMessages((p) => [
-        ...p,
-        {
-          id: Date.now().toString(),
-          role: "system",
-          text: "An error occurred communicating with the AI.",
-        },
-      ]);
+      setStep("enter-url");
     } finally {
       setIsLoading(false);
     }
@@ -340,6 +417,7 @@ export default function AppV2() {
       const data = JSON.parse(jsonStr) as AgentResponse;
 
       if (data.conversation) {
+        setLastConversation(data.conversation);
         setMessages((p) => [
           ...p,
           {
@@ -350,13 +428,121 @@ export default function AppV2() {
         ]);
       }
 
-      if (
-        (data.products && data.products.length > 0) ||
-        data.business_description
-      ) {
+      window.parent.postMessage(
+        {
+          type: "AGENT_MESSAGE",
+          payload: data,
+        },
+        "*",
+      );
+
+      if (data.products && data.products.length > 0) {
+        setProducts(data.products);
+      }
+      if (data.business_description) {
+        setBusinessDesc(data.business_description);
+      }
+      if (data.stop) {
+        setIsStopped(true);
+      }
+
+      setStep("results");
+    } catch (e) {
+      console.error("Failed to parse JSON response:", jsonStr);
+      setStep("enter-url");
+    }
+
+    return currentHistory;
+  };
+
+  const executeTurn = async (userText: string) => {
+    if (!userText.trim()) return;
+    if (isStopped) setIsStopped(false);
+
+    const newMessages = [
+      ...messages,
+      { id: Date.now().toString(), role: "user" as const, text: userText },
+    ];
+    setMessages(newMessages);
+    setInputText("");
+    setIsLoading(true);
+
+    try {
+      const newUserContent = { role: "user", parts: [{ text: userText }] };
+      const currentHistory = [...history, newUserContent];
+      const finalHistory = await processAgentTurnChat(currentHistory);
+      setHistory(finalHistory);
+    } catch (err: any) {
+      console.error(err);
+      setMessages((p) => [
+        ...p,
+        {
+          id: Date.now().toString(),
+          role: "system",
+          text: "An error occurred communicating with the AI.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const processAgentTurnChat = async (
+    currentHistory: Content[],
+  ): Promise<Content[]> => {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: currentHistory,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema,
+        tools: [{ functionDeclarations: [scrapeWebsiteTool] }],
+        toolConfig: { includeServerSideToolInvocations: true },
+      },
+    });
+
+    const candidate = response.candidates?.[0];
+    if (!candidate) throw new Error("No candidate returned");
+
+    const assistantContent = candidate.content;
+    currentHistory.push(assistantContent);
+
+    if (response.functionCalls && response.functionCalls.length > 0) {
+      for (const call of response.functionCalls) {
+        if (call.name === "scrapeWebsite") {
+          const url = call.args?.url as string;
+          const content = await scrapeWebsite(url);
+          const toolResponseContent = {
+            role: "user",
+            parts: [
+              {
+                functionResponse: {
+                  name: "scrapeWebsite",
+                  response: { content },
+                },
+              },
+            ],
+          };
+          currentHistory.push(toolResponseContent);
+          return await processAgentTurnChat(currentHistory);
+        }
+      }
+    }
+
+    const jsonStr = response.text || "";
+    try {
+      const data = JSON.parse(jsonStr) as AgentResponse;
+
+      if (data.conversation) {
+        setLastConversation(data.conversation);
         setMessages((p) => [
           ...p,
-          { id: `cat-${Date.now()}`, role: "catalog", text: "" },
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            text: data.conversation,
+          },
         ]);
       }
 
@@ -497,6 +683,32 @@ export default function AppV2() {
     );
   }
 
+  if (step === "processing") {
+    return <ProcessingView url={websiteUrl} />;
+  }
+
+  if (step === "results") {
+    return (
+      <ResultsView
+        products={products}
+        businessDesc={businessDesc}
+        onConfirm={() => {
+          window.parent.postMessage(
+            {
+              type: "AGENT_MESSAGE",
+              payload: {
+                confirmed: true,
+                products,
+                business_description: businessDesc,
+              },
+            },
+            "*",
+          );
+        }}
+      />
+    );
+  }
+
   return (
     <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
       <div className="flex-1 flex flex-col min-h-0">
@@ -524,28 +736,27 @@ export default function AppV2() {
                             <div>
                               <h3 className="text-base font-semibold text-emerald-800 flex items-center gap-2">
                                 <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
-                                Hi! Here are some my noted
+                                Updated catalog
                               </h3>
                               <p className="text-emerald-700/80 text-xs mt-0.5">
-                                Feel free to edit or add more details.
+                                Latest products and business info
                               </p>
                             </div>
-                            {products.length > 0 && (
-                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-medium px-4 shadow-sm transition-all transform active:scale-95 shrink-0">
-                                Confirm
-                              </Button>
-                            )}
+                            <Button
+                              onClick={() => setStep("results")}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-medium px-4 shadow-sm transition-all transform active:scale-95 shrink-0"
+                            >
+                              Back to results
+                            </Button>
                           </div>
                           <ClampedBlock
                             resetKey={msg.id}
                             measureKey={catalogMeasureKey}
                             variant="catalog"
                           >
-                            <CatalogContent
+                            <CatalogContentV2
                               products={products}
                               businessDesc={businessDesc}
-                              onBusinessDescChange={setBusinessDesc}
-                              onUpdateProduct={updateProduct}
                             />
                           </ClampedBlock>
                         </div>
