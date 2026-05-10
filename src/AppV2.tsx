@@ -62,19 +62,12 @@ const PROGRESS_STEPS = [
   { icon: Package, label: "Building your catalog...", delay: 6000 },
 ];
 
-/** OpenTill onboarding — dark charcoal + amber accent (matches product UI) */
-const OT = {
-  page: "#222222",
-  card: "#252525",
-  cardInner: "#1e1e1e",
-  border: "#333333",
-  muted: "#A0A0A0",
-  accent: "#FFC107",
-} as const;
+/** OpenTill onboarding — light page backdrop */
+const OT_PAGE = "#f4f4f5";
 
 function OpenTillWordmark() {
   return (
-    <div className="inline-flex w-fit rounded-lg bg-black px-3 py-1.5">
+    <div className="inline-flex w-fit rounded-lg border border-zinc-200 bg-zinc-900 px-3 py-1.5 shadow-sm">
       <span className="text-[15px] font-bold tracking-tight text-[#FFC107]">
         OpenTill
       </span>
@@ -90,7 +83,7 @@ function OnboardingStepBars({ activeStep }: { activeStep: number }) {
           key={i}
           className={cn(
             "h-1 flex-1 rounded-full transition-colors duration-300",
-            i === activeStep ? "bg-[#FFC107]" : "bg-[#333333]",
+            i === activeStep ? "bg-[#FFC107]" : "bg-zinc-200",
           )}
         />
       ))}
@@ -116,27 +109,26 @@ function OpenTillOnboardingShell({
   return (
     <div
       className="min-h-screen flex items-center justify-center overflow-hidden p-4 sm:p-6 font-sans antialiased"
-      style={{ backgroundColor: OT.page }}
+      style={{ backgroundColor: OT_PAGE }}
     >
       <div
-        className="w-full max-w-[520px] rounded-[24px] border border-[#333333] shadow-2xl overflow-hidden"
-        style={{ backgroundColor: OT.card }}
+        className="w-full max-w-[520px] rounded-[24px] border border-zinc-200 bg-white shadow-lg shadow-zinc-200/60 overflow-hidden"
       >
-        <div className="h-px w-full bg-[#FFC107]/85" aria-hidden />
+        <div className="h-px w-full bg-[#FFC107]" aria-hidden />
         <div className="flex flex-col gap-6 p-8 sm:p-10">
           <header className="flex flex-col gap-4">
             <OpenTillWordmark />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#A0A0A0]">
-              <span className="text-[#FFC107]" aria-hidden>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              <span className="text-[#d97706]" aria-hidden>
                 ●
               </span>
               {` STEP ${stepIndex} OF 4 — ${stepLabel}`}
             </p>
-            <h1 className="text-2xl sm:text-[28px] font-bold leading-tight text-white">
+            <h1 className="text-2xl sm:text-[28px] font-bold leading-tight text-zinc-900">
               {title}
             </h1>
             {subtitle ? (
-              <p className="text-sm sm:text-base leading-relaxed text-[#A0A0A0] -mt-1">
+              <p className="text-sm sm:text-base leading-relaxed text-zinc-500 -mt-1">
                 {subtitle}
               </p>
             ) : null}
@@ -193,19 +185,19 @@ function ClampedBlock({
 
   const gradientFrom =
     variant === "user"
-      ? "from-[#b8860b]"
+      ? "from-amber-300"
       : variant === "system"
-        ? "from-[#333333]"
-        : "from-[#2a2a2a]";
+        ? "from-zinc-100"
+        : "from-white";
 
   const toggleBtnClass =
     variant === "user"
-      ? "text-[#1a1a1a] hover:bg-[#FFC107]/25 hover:text-[#FFC107]"
+      ? "text-amber-900 hover:bg-amber-100/80"
       : variant === "system"
-        ? "text-[#A0A0A0] hover:bg-[#333]/80 text-xs"
+        ? "text-zinc-500 hover:bg-zinc-100 text-xs"
         : variant === "catalog"
-          ? "text-[#FFC107] hover:bg-[#333]"
-          : "text-[#FFC107] hover:bg-[#333]";
+          ? "text-amber-700 hover:bg-amber-50"
+          : "text-amber-700 hover:bg-amber-50";
 
   const showToggle = isTruncatable || expanded;
 
@@ -284,33 +276,29 @@ function ProcessingView({ url }: { url: string }) {
   return (
     <div
       className="h-screen flex flex-col font-sans overflow-hidden antialiased"
-      style={{ backgroundColor: OT.page }}
+      style={{ backgroundColor: OT_PAGE }}
     >
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div
-          className="w-full max-w-md rounded-[24px] border border-[#333333] p-10 text-center shadow-2xl"
-          style={{ backgroundColor: OT.card }}
+          className="w-full max-w-md rounded-[24px] border border-zinc-200 bg-white p-10 text-center shadow-lg shadow-zinc-200/50"
         >
           <div className="relative mb-8 inline-flex">
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-full animate-pulse"
-              style={{ backgroundColor: OT.cardInner }}
-            >
+            <div className="flex h-20 w-20 items-center justify-center rounded-full animate-pulse bg-amber-50 border border-amber-100">
               {(() => {
                 const StepIcon = PROGRESS_STEPS[currentStep]?.icon ?? Search;
-                return <StepIcon className="h-9 w-9 text-[#FFC107]" />;
+                return <StepIcon className="h-9 w-9 text-amber-600" />;
               })()}
             </div>
-            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a1a1a] border border-[#333]">
-              <Loader2 className="h-4 w-4 text-[#FFC107] animate-spin" />
+            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm">
+              <Loader2 className="h-4 w-4 text-amber-600 animate-spin" />
             </div>
           </div>
 
-          <h2 className="text-xl font-bold tracking-tight text-white mb-2">
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900 mb-2">
             {PROGRESS_STEPS[currentStep]?.label ?? "Processing..."}
           </h2>
 
-          <p className="text-[#A0A0A0] text-sm mb-8 break-all">{url}</p>
+          <p className="text-zinc-500 text-sm mb-8 break-all">{url}</p>
 
           <div className="flex justify-center gap-2">
             {PROGRESS_STEPS.map((_, i) => (
@@ -320,7 +308,7 @@ function ProcessingView({ url }: { url: string }) {
                   "h-1.5 rounded-full transition-all duration-700",
                   i <= currentStep
                     ? "bg-[#FFC107] w-8"
-                    : "bg-[#333] w-4",
+                    : "bg-zinc-200 w-4",
                 )}
               />
             ))}
@@ -343,30 +331,27 @@ function ResultsView({
   return (
     <div
       className="h-screen flex flex-col font-sans overflow-hidden antialiased"
-      style={{ backgroundColor: OT.page }}
+      style={{ backgroundColor: OT_PAGE }}
     >
       <div className="flex-1 flex flex-col min-h-0">
-        <div
-          className="h-full flex flex-col border border-[#333] overflow-hidden min-h-0 m-3 sm:m-4 rounded-[24px] shadow-2xl"
-          style={{ backgroundColor: OT.card }}
-        >
-          <div className="h-px w-full shrink-0 bg-[#FFC107]/85" aria-hidden />
+        <div className="h-full flex flex-col border border-zinc-200 bg-white overflow-hidden min-h-0 m-3 sm:m-4 rounded-[24px] shadow-lg shadow-zinc-200/50">
+          <div className="h-px w-full shrink-0 bg-[#FFC107]" aria-hidden />
           <div className="flex-1 overflow-hidden p-0 flex flex-col min-h-0">
             <ScrollArea className="flex-1 min-h-0">
               <div className="p-6 max-w-3xl mx-auto w-full pb-8">
                 <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 mb-6">
                   <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-[#FFC107]" />
+                    <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-amber-600" />
                       Here's what we found!
                     </h3>
-                    <p className="text-[#A0A0A0] text-xs mt-0.5">
+                    <p className="text-zinc-500 text-xs mt-0.5">
                       We analyzed your website and found the following
                     </p>
                   </div>
                   <Button
                     onClick={onConfirm}
-                    className="h-10 text-sm font-semibold px-6 shrink-0 rounded-xl bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] shadow-none border-0"
+                    className="h-10 text-sm font-semibold px-6 shrink-0 rounded-xl bg-[#FFC107] text-zinc-900 hover:bg-[#e6ac00] shadow-sm border-0"
                   >
                     Confirm & continue
                   </Button>
@@ -699,10 +684,10 @@ export default function AppV2() {
             type="button"
             disabled={!websiteChoice}
             className={cn(
-              "w-full h-12 rounded-xl text-base font-semibold border-0 shadow-none",
+              "w-full h-12 rounded-xl text-base font-semibold border-0 shadow-sm",
               websiteChoice
-                ? "bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00]"
-                : "bg-[#2a2a2a] text-[#666666] cursor-not-allowed",
+                ? "bg-[#FFC107] text-zinc-900 hover:bg-[#e6ac00]"
+                : "bg-zinc-100 text-zinc-400 cursor-not-allowed shadow-none",
             )}
             onClick={() => {
               if (websiteChoice === "yes") setStep("enter-url");
@@ -718,17 +703,17 @@ export default function AppV2() {
             type="button"
             onClick={() => setWebsiteChoice("yes")}
             className={cn(
-              "rounded-xl border p-5 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 focus-visible:ring-offset-[#252525]",
+              "rounded-xl border p-5 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white bg-zinc-50/80",
               websiteChoice === "yes"
-                ? "border-[#FFC107] bg-[#1e1e1e]"
-                : "border-[#333333] bg-[#1e1e1e] hover:border-[#444]",
+                ? "border-amber-500 bg-amber-50/90 shadow-sm"
+                : "border-zinc-200 hover:border-zinc-300",
             )}
           >
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-black/50 border border-[#333]">
-              <Globe className="h-5 w-5 text-[#FFC107]" aria-hidden />
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm">
+              <Globe className="h-5 w-5 text-amber-600" aria-hidden />
             </div>
-            <p className="font-bold text-white text-base mb-1">Yes, I have one</p>
-            <p className="text-sm leading-relaxed text-[#A0A0A0]">
+            <p className="font-bold text-zinc-900 text-base mb-1">Yes, I have one</p>
+            <p className="text-sm leading-relaxed text-zinc-500">
               Share your URL and we'll import details automatically
             </p>
           </button>
@@ -736,17 +721,17 @@ export default function AppV2() {
             type="button"
             onClick={() => setWebsiteChoice("no")}
             className={cn(
-              "rounded-xl border p-5 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 focus-visible:ring-offset-[#252525]",
+              "rounded-xl border p-5 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white bg-zinc-50/80",
               websiteChoice === "no"
-                ? "border-[#FFC107] bg-[#1e1e1e]"
-                : "border-[#333333] bg-[#1e1e1e] hover:border-[#444]",
+                ? "border-amber-500 bg-amber-50/90 shadow-sm"
+                : "border-zinc-200 hover:border-zinc-300",
             )}
           >
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-black/50 border border-[#333]">
-              <X className="h-5 w-5 text-[#FFC107]" aria-hidden />
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm">
+              <X className="h-5 w-5 text-amber-600" aria-hidden />
             </div>
-            <p className="font-bold text-white text-base mb-1">No, I don't</p>
-            <p className="text-sm leading-relaxed text-[#A0A0A0]">
+            <p className="font-bold text-zinc-900 text-base mb-1">No, I don't</p>
+            <p className="text-sm leading-relaxed text-zinc-500">
               No problem — we'll set everything up from scratch
             </p>
           </button>
@@ -775,14 +760,14 @@ export default function AppV2() {
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
                 placeholder="https://your-website.com"
-                className="flex-1 h-12 rounded-xl border-[#333] bg-[#1e1e1e] text-white placeholder:text-[#666] focus-visible:ring-[#FFC107] focus-visible:ring-offset-0 focus-visible:border-[#FFC107] text-base px-4"
+                className="flex-1 h-12 rounded-xl border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-amber-400 focus-visible:ring-offset-0 focus-visible:border-amber-400 text-base px-4 shadow-sm"
                 type="url"
                 autoFocus
               />
               <Button
                 type="submit"
                 disabled={!websiteUrl.trim()}
-                className="h-12 w-12 shrink-0 rounded-xl p-0 border-0 shadow-none bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] disabled:bg-[#2a2a2a] disabled:text-[#555]"
+                className="h-12 w-12 shrink-0 rounded-xl p-0 border-0 shadow-sm bg-[#FFC107] text-zinc-900 hover:bg-[#e6ac00] disabled:bg-zinc-100 disabled:text-zinc-400"
               >
                 <Send className="w-5 h-5" />
               </Button>
@@ -793,7 +778,7 @@ export default function AppV2() {
                 setWebsiteChoice(null);
                 setStep("ask-website");
               }}
-              className="text-sm text-[#A0A0A0] hover:text-white transition-colors text-center"
+              className="text-sm text-zinc-500 hover:text-zinc-800 transition-colors text-center"
             >
               Go back
             </button>
@@ -835,14 +820,11 @@ export default function AppV2() {
   return (
     <div
       className="h-screen flex flex-col font-sans overflow-hidden antialiased"
-      style={{ backgroundColor: OT.page }}
+      style={{ backgroundColor: OT_PAGE }}
     >
       <div className="flex-1 flex flex-col min-h-0">
-        <div
-          className="h-full flex flex-col border border-[#333] overflow-hidden min-h-0 m-3 sm:m-4 rounded-[24px] shadow-2xl"
-          style={{ backgroundColor: OT.card }}
-        >
-          <div className="h-px w-full shrink-0 bg-[#FFC107]/85" aria-hidden />
+        <div className="h-full flex flex-col border border-zinc-200 bg-white overflow-hidden min-h-0 m-3 sm:m-4 rounded-[24px] shadow-lg shadow-zinc-200/50">
+          <div className="h-px w-full shrink-0 bg-[#FFC107]" aria-hidden />
           <div className="flex-1 overflow-hidden p-0 flex flex-col min-h-0">
             <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
               <div className="p-4 space-y-6 max-w-3xl mx-auto w-full pb-8">
@@ -861,20 +843,20 @@ export default function AppV2() {
                         key={msg.id}
                         className="flex justify-start animate-in fade-in slide-in-from-bottom-2 w-full mb-6"
                       >
-                        <div className="max-w-[85%] w-full p-4 rounded-2xl border border-[#333] text-white rounded-bl-sm shadow-sm bg-[#1e1e1e]">
-                          <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 pb-3 mb-1 border-b border-[#333]">
+                        <div className="max-w-[85%] w-full p-4 rounded-2xl border border-zinc-200 text-zinc-900 rounded-bl-sm shadow-sm bg-zinc-50/80">
+                          <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 pb-3 mb-1 border-b border-zinc-200">
                             <div>
-                              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 shrink-0 text-[#FFC107]" />
+                              <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 shrink-0 text-amber-600" />
                                 Updated catalog
                               </h3>
-                              <p className="text-[#A0A0A0] text-xs mt-0.5">
+                              <p className="text-zinc-500 text-xs mt-0.5">
                                 Latest products and business info
                               </p>
                             </div>
                             <Button
                               onClick={() => setStep("results")}
-                              className="h-8 text-xs font-semibold px-4 shrink-0 rounded-lg bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] border-0 shadow-none"
+                              className="h-8 text-xs font-semibold px-4 shrink-0 rounded-lg bg-[#FFC107] text-zinc-900 hover:bg-[#e6ac00] border-0 shadow-sm"
                             >
                               Back to results
                             </Button>
@@ -902,10 +884,10 @@ export default function AppV2() {
                       <div
                         className={`max-w-[85%] p-4 rounded-2xl ${
                           msg.role === "user"
-                            ? "bg-[#FFC107] text-[#1a1a1a] rounded-br-sm shadow-md"
+                            ? "bg-[#FFC107] text-zinc-900 rounded-br-sm shadow-md"
                             : msg.role === "system"
-                              ? "bg-[#2a2a2a] text-[#A0A0A0] text-[10px] text-center mx-auto rounded-full px-4 border border-[#333]"
-                              : "bg-[#1e1e1e] border border-[#333] text-[#e8e8e8] rounded-bl-sm shadow-sm"
+                              ? "bg-zinc-100 text-zinc-500 text-[10px] text-center mx-auto rounded-full px-4 border border-zinc-200"
+                              : "bg-white border border-zinc-200 text-zinc-800 rounded-bl-sm shadow-sm"
                         }`}
                       >
                         <ClampedMarkdownMessage
@@ -920,10 +902,10 @@ export default function AppV2() {
                           }
                           proseClassName={
                             msg.role === "user"
-                              ? "prose prose-sm md:prose-base max-w-none prose-headings:text-[#1a1a1a] prose-p:text-[#1a1a1a] prose-strong:text-[#1a1a1a] prose-a:text-[#1a1a1a]"
+                              ? "prose prose-sm md:prose-base max-w-none prose-headings:text-zinc-900 prose-p:text-zinc-900 prose-strong:text-zinc-900 prose-a:text-amber-800"
                               : msg.role === "system"
-                                ? "prose prose-invert max-w-none text-[10px] leading-snug text-[#A0A0A0]"
-                                : "prose prose-invert max-w-none text-sm md:text-base prose-headings:text-white prose-p:text-[#e0e0e0]"
+                                ? "prose prose-neutral max-w-none text-[10px] leading-snug text-zinc-500"
+                                : "prose prose-neutral max-w-none text-sm md:text-base prose-headings:text-zinc-900 prose-p:text-zinc-700"
                           }
                         />
                       </div>
@@ -932,9 +914,9 @@ export default function AppV2() {
                 })}
                 {isLoading && (
                   <div className="flex justify-start animate-in fade-in">
-                    <div className="bg-[#1e1e1e] border border-[#333] p-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 text-[#FFC107] animate-spin" />
-                      <span className="text-sm text-[#A0A0A0]">
+                    <div className="bg-white border border-zinc-200 p-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-amber-600 animate-spin" />
+                      <span className="text-sm text-zinc-500">
                         Thinking...
                       </span>
                     </div>
@@ -944,8 +926,7 @@ export default function AppV2() {
               </div>
             </ScrollArea>
             <div
-              className="p-4 border-t border-[#333] flex-shrink-0"
-              style={{ backgroundColor: OT.cardInner }}
+              className="p-4 border-t border-zinc-200 flex-shrink-0 bg-zinc-50/90"
             >
               <form
                 className="max-w-3xl mx-auto w-full flex gap-2"
@@ -963,12 +944,12 @@ export default function AppV2() {
                       : "Reply to assistant..."
                   }
                   disabled={isLoading}
-                  className="flex-1 h-12 rounded-xl border-[#333] bg-[#252525] text-white placeholder:text-[#666] focus-visible:ring-[#FFC107] focus-visible:ring-offset-0 focus-visible:border-[#FFC107] text-base px-4"
+                  className="flex-1 h-12 rounded-xl border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-amber-400 focus-visible:ring-offset-0 focus-visible:border-amber-400 text-base px-4 shadow-sm"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !inputText.trim()}
-                  className="h-12 w-12 shrink-0 rounded-xl p-0 border-0 shadow-none bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] disabled:bg-[#2a2a2a] disabled:text-[#555]"
+                  className="h-12 w-12 shrink-0 rounded-xl p-0 border-0 shadow-sm bg-[#FFC107] text-zinc-900 hover:bg-[#e6ac00] disabled:bg-zinc-100 disabled:text-zinc-400"
                 >
                   <Send className="w-5 h-5" />
                 </Button>
