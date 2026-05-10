@@ -338,7 +338,7 @@ export default function AppV2() {
     window.parent.postMessage(
       {
         type: "AGENT_MESSAGE",
-        payload: { context: "USER_DONT" },
+        payload: { context: "USER_DON_NOT_HAVE_WEBSITE", stop: true },
       },
       "*",
     );
@@ -595,8 +595,8 @@ export default function AppV2() {
                 alt="OpenTill"
                 className="w-44 max-w-[85vw] h-auto mb-6 object-contain drop-shadow-md"
               />
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4 tracking-tight">
-                Hi there, let us listen to you!
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 mb-4 tracking-tight whitespace-nowrap">
+                Let's learn about your business!
               </h2>
               <p className="text-neutral-600 text-lg mb-8 leading-relaxed">
                 Do you have a website for your business?
@@ -692,6 +692,7 @@ export default function AppV2() {
             {
               type: "AGENT_MESSAGE",
               payload: {
+                stop: true,
                 confirmed: true,
                 products,
                 business_description: businessDesc,
