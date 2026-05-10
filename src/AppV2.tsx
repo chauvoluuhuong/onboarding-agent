@@ -147,8 +147,7 @@ function ClampedBlock({
           size="default"
           className={cn(
             "mt-2 min-h-11 min-w-11 px-4 text-sm font-semibold rounded-lg",
-            !expanded &&
-              "text-[1.35rem] leading-none tracking-[0.15em] py-2.5",
+            !expanded && "text-[1.35rem] leading-none tracking-[0.15em] py-2.5",
             toggleBtnClass,
           )}
           onClick={() => setExpanded((v) => !v)}
@@ -205,9 +204,7 @@ function ProcessingView({ url }: { url: string }) {
               <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center animate-pulse">
                 {(() => {
                   const StepIcon = PROGRESS_STEPS[currentStep]?.icon ?? Search;
-                  return (
-                    <StepIcon className="w-9 h-9 text-indigo-600" />
-                  );
+                  return <StepIcon className="w-9 h-9 text-indigo-600" />;
                 })()}
               </div>
               <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -219,9 +216,7 @@ function ProcessingView({ url }: { url: string }) {
               {PROGRESS_STEPS[currentStep]?.label ?? "Processing..."}
             </h2>
 
-            <p className="text-neutral-400 text-sm mb-8 break-all">
-              {url}
-            </p>
+            <p className="text-neutral-400 text-sm mb-8 break-all">{url}</p>
 
             <div className="flex gap-2">
               {PROGRESS_STEPS.map((_, i) => (
@@ -273,7 +268,7 @@ function ResultsView({
                     onClick={onConfirm}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 text-sm font-medium px-6 shadow-sm shrink-0"
                   >
-                    Confirm
+                    Confirm & continue
                   </Button>
                 </div>
 

@@ -134,7 +134,7 @@ export function CatalogContentV2({
               {products.length} product{products.length !== 1 ? "s" : ""} found
             </h4>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             {products.map((product, i) => (
               <ProductCard key={i} product={product} index={i} />
             ))}
