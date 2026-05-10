@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CatalogContentV2 } from "./CatalogContent_v2";
 import type { Product } from "./CatalogContent_v2";
@@ -30,7 +29,6 @@ import {
   responseSchema,
   scrapeWebsiteTool,
 } from "./services/geminiChatService";
-import openTillLogo from "./assets/opentill-logo.png";
 import { cn } from "@/lib/utils";
 
 type AgentResponse = {
@@ -63,6 +61,94 @@ const PROGRESS_STEPS = [
   { icon: Sparkles, label: "Analyzing your products...", delay: 3000 },
   { icon: Package, label: "Building your catalog...", delay: 6000 },
 ];
+
+/** OpenTill onboarding — dark charcoal + amber accent (matches product UI) */
+const OT = {
+  page: "#222222",
+  card: "#252525",
+  cardInner: "#1e1e1e",
+  border: "#333333",
+  muted: "#A0A0A0",
+  accent: "#FFC107",
+} as const;
+
+function OpenTillWordmark() {
+  return (
+    <div className="inline-flex w-fit rounded-lg bg-black px-3 py-1.5">
+      <span className="text-[15px] font-bold tracking-tight text-[#FFC107]">
+        OpenTill
+      </span>
+    </div>
+  );
+}
+
+function OnboardingStepBars({ activeStep }: { activeStep: number }) {
+  return (
+    <div className="flex gap-2 pt-2" role="progressbar" aria-valuenow={activeStep} aria-valuemin={1} aria-valuemax={4}>
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className={cn(
+            "h-1 flex-1 rounded-full transition-colors duration-300",
+            i === activeStep ? "bg-[#FFC107]" : "bg-[#333333]",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+function OpenTillOnboardingShell({
+  stepIndex,
+  stepLabel,
+  title,
+  subtitle,
+  children,
+  footer,
+}: {
+  stepIndex: number;
+  stepLabel: string;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center overflow-hidden p-4 sm:p-6 font-sans antialiased"
+      style={{ backgroundColor: OT.page }}
+    >
+      <div
+        className="w-full max-w-[520px] rounded-[24px] border border-[#333333] shadow-2xl overflow-hidden"
+        style={{ backgroundColor: OT.card }}
+      >
+        <div className="h-px w-full bg-[#FFC107]/85" aria-hidden />
+        <div className="flex flex-col gap-6 p-8 sm:p-10">
+          <header className="flex flex-col gap-4">
+            <OpenTillWordmark />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#A0A0A0]">
+              <span className="text-[#FFC107]" aria-hidden>
+                ●
+              </span>
+              {` STEP ${stepIndex} OF 4 — ${stepLabel}`}
+            </p>
+            <h1 className="text-2xl sm:text-[28px] font-bold leading-tight text-white">
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="text-sm sm:text-base leading-relaxed text-[#A0A0A0] -mt-1">
+                {subtitle}
+              </p>
+            ) : null}
+          </header>
+          {children}
+          {footer}
+          <OnboardingStepBars activeStep={stepIndex} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ClampedBlock({
   resetKey,
@@ -107,19 +193,19 @@ function ClampedBlock({
 
   const gradientFrom =
     variant === "user"
-      ? "from-indigo-600"
+      ? "from-[#b8860b]"
       : variant === "system"
-        ? "from-neutral-200"
-        : "from-white";
+        ? "from-[#333333]"
+        : "from-[#2a2a2a]";
 
   const toggleBtnClass =
     variant === "user"
-      ? "text-indigo-100 hover:bg-indigo-500/35 hover:text-white"
+      ? "text-[#1a1a1a] hover:bg-[#FFC107]/25 hover:text-[#FFC107]"
       : variant === "system"
-        ? "text-neutral-700 hover:bg-neutral-300/50 text-xs"
+        ? "text-[#A0A0A0] hover:bg-[#333]/80 text-xs"
         : variant === "catalog"
-          ? "text-emerald-700 hover:bg-emerald-50"
-          : "text-indigo-600 hover:bg-indigo-50";
+          ? "text-[#FFC107] hover:bg-[#333]"
+          : "text-[#FFC107] hover:bg-[#333]";
 
   const showToggle = isTruncatable || expanded;
 
@@ -196,44 +282,51 @@ function ProcessingView({ url }: { url: string }) {
   }, []);
 
   return (
-    <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
-      <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm">
-        <CardContent className="flex-1 p-0 flex flex-col items-center justify-center bg-neutral-50/50 rounded-xl">
-          <div className="flex flex-col items-center justify-center text-center px-4 max-w-md mx-auto">
-            <div className="relative mb-8">
-              <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center animate-pulse">
-                {(() => {
-                  const StepIcon = PROGRESS_STEPS[currentStep]?.icon ?? Search;
-                  return <StepIcon className="w-9 h-9 text-indigo-600" />;
-                })()}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
-                <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
-              </div>
+    <div
+      className="h-screen flex flex-col font-sans overflow-hidden antialiased"
+      style={{ backgroundColor: OT.page }}
+    >
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div
+          className="w-full max-w-md rounded-[24px] border border-[#333333] p-10 text-center shadow-2xl"
+          style={{ backgroundColor: OT.card }}
+        >
+          <div className="relative mb-8 inline-flex">
+            <div
+              className="flex h-20 w-20 items-center justify-center rounded-full animate-pulse"
+              style={{ backgroundColor: OT.cardInner }}
+            >
+              {(() => {
+                const StepIcon = PROGRESS_STEPS[currentStep]?.icon ?? Search;
+                return <StepIcon className="h-9 w-9 text-[#FFC107]" />;
+              })()}
             </div>
-
-            <h2 className="text-xl font-semibold text-neutral-900 mb-2 tracking-tight">
-              {PROGRESS_STEPS[currentStep]?.label ?? "Processing..."}
-            </h2>
-
-            <p className="text-neutral-400 text-sm mb-8 break-all">{url}</p>
-
-            <div className="flex gap-2">
-              {PROGRESS_STEPS.map((_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-700",
-                    i <= currentStep
-                      ? "bg-indigo-500 w-8"
-                      : "bg-neutral-200 w-4",
-                  )}
-                />
-              ))}
+            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a1a1a] border border-[#333]">
+              <Loader2 className="h-4 w-4 text-[#FFC107] animate-spin" />
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <h2 className="text-xl font-bold tracking-tight text-white mb-2">
+            {PROGRESS_STEPS[currentStep]?.label ?? "Processing..."}
+          </h2>
+
+          <p className="text-[#A0A0A0] text-sm mb-8 break-all">{url}</p>
+
+          <div className="flex justify-center gap-2">
+            {PROGRESS_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-700",
+                  i <= currentStep
+                    ? "bg-[#FFC107] w-8"
+                    : "bg-[#333] w-4",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -248,25 +341,32 @@ function ResultsView({
   onConfirm: () => void;
 }) {
   return (
-    <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
+    <div
+      className="h-screen flex flex-col font-sans overflow-hidden antialiased"
+      style={{ backgroundColor: OT.page }}
+    >
       <div className="flex-1 flex flex-col min-h-0">
-        <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm min-h-0">
-          <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-neutral-50/50 rounded-xl min-h-0">
+        <div
+          className="h-full flex flex-col border border-[#333] overflow-hidden min-h-0 m-3 sm:m-4 rounded-[24px] shadow-2xl"
+          style={{ backgroundColor: OT.card }}
+        >
+          <div className="h-px w-full shrink-0 bg-[#FFC107]/85" aria-hidden />
+          <div className="flex-1 overflow-hidden p-0 flex flex-col min-h-0">
             <ScrollArea className="flex-1 min-h-0">
               <div className="p-6 max-w-3xl mx-auto w-full pb-8">
                 <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-[#FFC107]" />
                       Here's what we found!
                     </h3>
-                    <p className="text-emerald-700/70 text-xs mt-0.5">
+                    <p className="text-[#A0A0A0] text-xs mt-0.5">
                       We analyzed your website and found the following
                     </p>
                   </div>
                   <Button
                     onClick={onConfirm}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 text-sm font-medium px-6 shadow-sm shrink-0"
+                    className="h-10 text-sm font-semibold px-6 shrink-0 rounded-xl bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] shadow-none border-0"
                   >
                     Confirm & continue
                   </Button>
@@ -278,8 +378,8 @@ function ResultsView({
                 />
               </div>
             </ScrollArea>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -296,6 +396,9 @@ export default function AppV2() {
   const [businessDesc, setBusinessDesc] = useState<string>("");
   const [isStopped, setIsStopped] = useState(false);
   const [lastConversation, setLastConversation] = useState<string>("");
+  const [websiteChoice, setWebsiteChoice] = useState<"yes" | "no" | null>(
+    null,
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -586,95 +689,119 @@ export default function AppV2() {
 
   if (step === "ask-website") {
     return (
-      <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
-        <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardContent className="flex-1 p-0 flex flex-col items-center justify-center bg-neutral-50/50 rounded-xl">
-            <div className="flex flex-col items-center justify-center text-center px-4 animate-in fade-in zoom-in duration-500 max-w-lg mx-auto">
-              <img
-                src={openTillLogo}
-                alt="OpenTill"
-                className="w-44 max-w-[85vw] h-auto mb-6 object-contain drop-shadow-md"
-              />
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 mb-4 tracking-tight whitespace-nowrap">
-                Let's learn about your business!
-              </h2>
-              <p className="text-neutral-600 text-lg mb-8 leading-relaxed">
-                Do you have a website for your business?
-              </p>
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => setStep("enter-url")}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white h-12 px-8 text-base font-medium shadow-md transition-all active:scale-95"
-                >
-                  <Globe className="w-5 h-5 mr-2" />
-                  Yes, I have one
-                </Button>
-                <Button
-                  onClick={handleNoWebsite}
-                  variant="outline"
-                  className="border-neutral-300 text-neutral-700 hover:bg-neutral-100 h-12 px-8 text-base font-medium shadow-sm transition-all active:scale-95"
-                >
-                  <X className="w-5 h-5 mr-2" />
-                  No, I don't
-                </Button>
-              </div>
+      <OpenTillOnboardingShell
+        stepIndex={1}
+        stepLabel="BUSINESS BASICS"
+        title="Tell us about your business."
+        subtitle="We'll personalise your setup based on your answers."
+        footer={
+          <Button
+            type="button"
+            disabled={!websiteChoice}
+            className={cn(
+              "w-full h-12 rounded-xl text-base font-semibold border-0 shadow-none",
+              websiteChoice
+                ? "bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00]"
+                : "bg-[#2a2a2a] text-[#666666] cursor-not-allowed",
+            )}
+            onClick={() => {
+              if (websiteChoice === "yes") setStep("enter-url");
+              if (websiteChoice === "no") handleNoWebsite();
+            }}
+          >
+            Continue →
+          </Button>
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setWebsiteChoice("yes")}
+            className={cn(
+              "rounded-xl border p-5 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 focus-visible:ring-offset-[#252525]",
+              websiteChoice === "yes"
+                ? "border-[#FFC107] bg-[#1e1e1e]"
+                : "border-[#333333] bg-[#1e1e1e] hover:border-[#444]",
+            )}
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-black/50 border border-[#333]">
+              <Globe className="h-5 w-5 text-[#FFC107]" aria-hidden />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="font-bold text-white text-base mb-1">Yes, I have one</p>
+            <p className="text-sm leading-relaxed text-[#A0A0A0]">
+              Share your URL and we'll import details automatically
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setWebsiteChoice("no")}
+            className={cn(
+              "rounded-xl border p-5 text-left transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 focus-visible:ring-offset-[#252525]",
+              websiteChoice === "no"
+                ? "border-[#FFC107] bg-[#1e1e1e]"
+                : "border-[#333333] bg-[#1e1e1e] hover:border-[#444]",
+            )}
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-black/50 border border-[#333]">
+              <X className="h-5 w-5 text-[#FFC107]" aria-hidden />
+            </div>
+            <p className="font-bold text-white text-base mb-1">No, I don't</p>
+            <p className="text-sm leading-relaxed text-[#A0A0A0]">
+              No problem — we'll set everything up from scratch
+            </p>
+          </button>
+        </div>
+      </OpenTillOnboardingShell>
     );
   }
 
   if (step === "enter-url") {
     return (
-      <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
-        <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardContent className="flex-1 p-0 flex flex-col items-center justify-center bg-neutral-50/50 rounded-xl">
-            <div className="flex flex-col items-center justify-center text-center px-4 animate-in fade-in zoom-in duration-500 max-w-lg mx-auto w-full">
-              <img
-                src={openTillLogo}
-                alt="OpenTill"
-                className="w-44 max-w-[85vw] h-auto mb-6 object-contain drop-shadow-md"
+      <OpenTillOnboardingShell
+        stepIndex={2}
+        stepLabel="YOUR WEBSITE"
+        title="What's your website URL?"
+        subtitle="We'll look at it to understand your business better."
+        footer={
+          <form
+            className="w-full flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleWebsiteSubmit();
+            }}
+          >
+            <div className="flex gap-2">
+              <Input
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                placeholder="https://your-website.com"
+                className="flex-1 h-12 rounded-xl border-[#333] bg-[#1e1e1e] text-white placeholder:text-[#666] focus-visible:ring-[#FFC107] focus-visible:ring-offset-0 focus-visible:border-[#FFC107] text-base px-4"
+                type="url"
+                autoFocus
               />
-              <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-3 tracking-tight">
-                What's your website URL?
-              </h2>
-              <p className="text-neutral-500 text-sm mb-6">
-                We'll look at it to understand your business better.
-              </p>
-              <form
-                className="w-full flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleWebsiteSubmit();
-                }}
+              <Button
+                type="submit"
+                disabled={!websiteUrl.trim()}
+                className="h-12 w-12 shrink-0 rounded-xl p-0 border-0 shadow-none bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] disabled:bg-[#2a2a2a] disabled:text-[#555]"
               >
-                <Input
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://your-website.com"
-                  className="flex-1 border-neutral-300 focus-visible:ring-indigo-600 h-12 shadow-sm text-base px-4 bg-white"
-                  type="url"
-                  autoFocus
-                />
-                <Button
-                  type="submit"
-                  disabled={!websiteUrl.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-700 h-12 w-12 p-0 shadow-md transition-all active:scale-95"
-                >
-                  <Send className="w-5 h-5" />
-                </Button>
-              </form>
-              <button
-                onClick={() => setStep("ask-website")}
-                className="mt-4 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
-              >
-                Go back
-              </button>
+                <Send className="w-5 h-5" />
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteChoice(null);
+                setStep("ask-website");
+              }}
+              className="text-sm text-[#A0A0A0] hover:text-white transition-colors text-center"
+            >
+              Go back
+            </button>
+          </form>
+        }
+      >
+        <div className="min-h-[1px]" aria-hidden />
+      </OpenTillOnboardingShell>
     );
   }
 
@@ -706,10 +833,17 @@ export default function AppV2() {
   }
 
   return (
-    <div className="h-screen bg-neutral-100 flex flex-col font-sans overflow-hidden">
+    <div
+      className="h-screen flex flex-col font-sans overflow-hidden antialiased"
+      style={{ backgroundColor: OT.page }}
+    >
       <div className="flex-1 flex flex-col min-h-0">
-        <Card className="h-full flex flex-col shadow-lg border-neutral-200 overflow-hidden bg-white/80 backdrop-blur-sm min-h-0">
-          <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-neutral-50/50 rounded-xl min-h-0">
+        <div
+          className="h-full flex flex-col border border-[#333] overflow-hidden min-h-0 m-3 sm:m-4 rounded-[24px] shadow-2xl"
+          style={{ backgroundColor: OT.card }}
+        >
+          <div className="h-px w-full shrink-0 bg-[#FFC107]/85" aria-hidden />
+          <div className="flex-1 overflow-hidden p-0 flex flex-col min-h-0">
             <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
               <div className="p-4 space-y-6 max-w-3xl mx-auto w-full pb-8">
                 {messages.map((msg) => {
@@ -727,20 +861,20 @@ export default function AppV2() {
                         key={msg.id}
                         className="flex justify-start animate-in fade-in slide-in-from-bottom-2 w-full mb-6"
                       >
-                        <div className="max-w-[85%] w-full p-4 rounded-2xl bg-white border border-neutral-200 text-neutral-800 rounded-bl-sm shadow-sm">
-                          <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 pb-3 mb-1 border-b border-neutral-100">
+                        <div className="max-w-[85%] w-full p-4 rounded-2xl border border-[#333] text-white rounded-bl-sm shadow-sm bg-[#1e1e1e]">
+                          <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-3 pb-3 mb-1 border-b border-[#333]">
                             <div>
-                              <h3 className="text-base font-semibold text-emerald-800 flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+                              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 shrink-0 text-[#FFC107]" />
                                 Updated catalog
                               </h3>
-                              <p className="text-emerald-700/80 text-xs mt-0.5">
+                              <p className="text-[#A0A0A0] text-xs mt-0.5">
                                 Latest products and business info
                               </p>
                             </div>
                             <Button
                               onClick={() => setStep("results")}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs font-medium px-4 shadow-sm transition-all transform active:scale-95 shrink-0"
+                              className="h-8 text-xs font-semibold px-4 shrink-0 rounded-lg bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] border-0 shadow-none"
                             >
                               Back to results
                             </Button>
@@ -768,10 +902,10 @@ export default function AppV2() {
                       <div
                         className={`max-w-[85%] p-4 rounded-2xl ${
                           msg.role === "user"
-                            ? "bg-indigo-600 text-white rounded-br-sm shadow-md"
+                            ? "bg-[#FFC107] text-[#1a1a1a] rounded-br-sm shadow-md"
                             : msg.role === "system"
-                              ? "bg-neutral-200 text-neutral-600 text-[10px] text-center mx-auto rounded-full px-4"
-                              : "bg-white border border-neutral-200 text-neutral-800 rounded-bl-sm shadow-sm"
+                              ? "bg-[#2a2a2a] text-[#A0A0A0] text-[10px] text-center mx-auto rounded-full px-4 border border-[#333]"
+                              : "bg-[#1e1e1e] border border-[#333] text-[#e8e8e8] rounded-bl-sm shadow-sm"
                         }`}
                       >
                         <ClampedMarkdownMessage
@@ -786,10 +920,10 @@ export default function AppV2() {
                           }
                           proseClassName={
                             msg.role === "user"
-                              ? "prose prose-sm md:prose-base prose-invert max-w-none"
+                              ? "prose prose-sm md:prose-base max-w-none prose-headings:text-[#1a1a1a] prose-p:text-[#1a1a1a] prose-strong:text-[#1a1a1a] prose-a:text-[#1a1a1a]"
                               : msg.role === "system"
-                                ? "prose prose-neutral max-w-none text-[10px] leading-snug"
-                                : "prose prose-neutral max-w-none text-sm md:text-base"
+                                ? "prose prose-invert max-w-none text-[10px] leading-snug text-[#A0A0A0]"
+                                : "prose prose-invert max-w-none text-sm md:text-base prose-headings:text-white prose-p:text-[#e0e0e0]"
                           }
                         />
                       </div>
@@ -798,9 +932,9 @@ export default function AppV2() {
                 })}
                 {isLoading && (
                   <div className="flex justify-start animate-in fade-in">
-                    <div className="bg-white border border-neutral-200 p-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
-                      <span className="text-sm text-neutral-500">
+                    <div className="bg-[#1e1e1e] border border-[#333] p-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-[#FFC107] animate-spin" />
+                      <span className="text-sm text-[#A0A0A0]">
                         Thinking...
                       </span>
                     </div>
@@ -809,7 +943,10 @@ export default function AppV2() {
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
-            <div className="p-4 bg-white border-t border-neutral-100 flex-shrink-0">
+            <div
+              className="p-4 border-t border-[#333] flex-shrink-0"
+              style={{ backgroundColor: OT.cardInner }}
+            >
               <form
                 className="max-w-3xl mx-auto w-full flex gap-2"
                 onSubmit={(e) => {
@@ -826,19 +963,19 @@ export default function AppV2() {
                       : "Reply to assistant..."
                   }
                   disabled={isLoading}
-                  className="flex-1 border-neutral-300 focus-visible:ring-indigo-600 h-12 shadow-sm text-base px-4 bg-white"
+                  className="flex-1 h-12 rounded-xl border-[#333] bg-[#252525] text-white placeholder:text-[#666] focus-visible:ring-[#FFC107] focus-visible:ring-offset-0 focus-visible:border-[#FFC107] text-base px-4"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !inputText.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-700 h-12 w-12 p-0 shadow-md transition-all active:scale-95"
+                  className="h-12 w-12 shrink-0 rounded-xl p-0 border-0 shadow-none bg-[#FFC107] text-[#1a1a1a] hover:bg-[#e6ac00] disabled:bg-[#2a2a2a] disabled:text-[#555]"
                 >
                   <Send className="w-5 h-5" />
                 </Button>
               </form>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
